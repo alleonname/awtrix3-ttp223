@@ -26,8 +26,17 @@ jobs:
           grep -n "^EasyButton" src/PeripheryManager.cpp
           test "$(grep -c '35, false, false' src/PeripheryManager.cpp)" = "3"
 
+      - name: Pin FastLED to the version official builds used (newer ones are too big)
+        run: |
+          sed -i 's|fastled/FastLED@^3.6.0|fastled/FastLED@3.6.0|' platformio.ini
+          grep -n "FastLED" platformio.ini
+
       - name: Build ulanzi
         run: pio run -e ulanzi
+
+      - name: Library versions used
+        if: always()
+        run: pio pkg list -e ulanzi || true
 
       - uses: actions/upload-artifact@v4
         with:
