@@ -1,0 +1,35 @@
+name: Build TTP223 firmware
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Buttons for TTP223 (active HIGH, no pull-up)
+        run: |
+          sed -i \
+            -e 's/^EasyButton button_left(BUTTON_UP_PIN);/EasyButton button_left(BUTTON_UP_PIN, 35, false, false);/' \
+            -e 's/^EasyButton button_right(BUTTON_DOWN_PIN);/EasyButton button_right(BUTTON_DOWN_PIN, 35, false, false);/' \
+            -e 's/^EasyButton button_select(BUTTON_SELECT_PIN);/EasyButton button_select(BUTTON_SELECT_PIN, 35, false, false);/' \
+            src/PeripheryManager.cpp
+          grep -n "^EasyButton" src/PeripheryManager.cpp
+          test "$(grep -c '35, false, false' src/PeripheryManager.cpp)" = "3"
+
+      - name: Build ulanzi
+        run: pio run -e ulanzi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: awtrix3-ulanzi-ttp223
+          path: .pio/build/ulanzi/firmware.bin
